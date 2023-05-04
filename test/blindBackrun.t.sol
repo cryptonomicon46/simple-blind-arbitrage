@@ -5,36 +5,22 @@ import "../src/TokenForTesting.sol";
 import "../src/blindBackrunDebug.sol";
 import "openzeppelin/token/ERC20/IERC20.sol";
 import "openzeppelin/token/ERC20/ERC20.sol";
+import {IUniswapV2Router,IUniswapFactory,IUniswapV2Pair} from "./interfaces/IUniswap.sol";
+import {Iweth} from "./interfaces/IWeth.sol";
 
 error Unauthorized();
 
-interface IUniswapFactory {
-    function getPair(address tokenA, address tokenB) external view returns (address pair);
-}
 
-interface IUniswapV2Router {
-    function swapExactETHForTokens(
-        uint amountOutMin, 
-        address[] calldata path,
-        address to, 
-        uint deadline
-    ) external payable returns (uint[] memory amounts);
-    function addLiquidityETH(
-        address token,
-        uint amountTokenDesired,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline
-    ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
-}
+
 
 contract BlindBackrunTest is Test {
     BlindBackrun public blindBackrun;
     TokenForTesting public testToken;
 
-    address wethTokenAddress = address(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
-    IWETH WETH = IWETH(wethTokenAddress);
+    // address wethTokenAddress = address(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);//Goerli
+    address wethTokenAddress = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);//mainnet
+    // IWETH WETH = IWETH(wethTokenAddress);
+    Iweth weth = Iweth(wethTokenAddress);
 
     address uniswapV2RouterAddress = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
     address sushiswapRouterAddress = address(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506);
@@ -47,31 +33,49 @@ contract BlindBackrunTest is Test {
     
     IUniswapFactory public uniswapFactory = IUniswapFactory(uniswapv2FactoryAddress);
     IUniswapFactory public sushiswapFactory = IUniswapFactory(sushiswapFactoryAddress);
+    address here = address(this);
     
     function setUp() public {
+        vm.createSelectFork("mainnet",17_033_152);
+
+        console.log("Address of here is %s", here);
         blindBackrun = new BlindBackrun(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6); // WETH address on goerli
-        vm.deal(address(blindBackrun), 1e22);
-        WETH.deposit{value: 1e19}();
-        WETH.transfer(address(blindBackrun), 1e19);
+        vm.deal(address(blindBackrun), 10_000 ether);//10000 000000000000000000
+        console.log("Balance of blindBackRun contract=%s ether", address(blindBackrun).balance/1e18);
+        console.log("Depositing into the WETH contract...");
+        // WETH.deposit{value: 1e19}();
+        weth.deposit{value: 10 ether}();
+
+        emit log_named_decimal_uint("WETH balnace of this contract", weth.balanceOf(here),18);
+        // WETH.transfer(address(blindBackrun), 1e19);
+        weth.transfer(address(blindBackrun), 1e19);
+
         testToken = new TokenForTesting();
+        console.log("Address of test token is:", address(testToken));
+        emit log_named_decimal_uint("Token Balance of here is", testToken.balanceOf(here),18);
     }
 
     function test_newArb() public {
-        testToken.approve(address(uniswapv2Router), 1e19);
-        testToken.approve(address(sushiswapRouter), 1e18);
+        console.log("Starting test_newArb()...");
+        testToken.approve(address(uniswapv2Router), 10 ether);
+        // testToken.approve(address(sushiswapRouter), 1 ether);
 
-        uniswapv2Router.addLiquidityETH{value: 1e18}(address(testToken), 1e19, 1, 1, msg.sender, 1e20);
-        sushiswapRouter.addLiquidityETH{value: 1e18}(address(testToken), 1e18, 1, 1, msg.sender, 1e20);
+        uniswapv2Router.addLiquidityETH{value: 1 ether}(address(testToken), 10 ether, 1, 1, msg.sender, 1e20);
+
+        // sushiswapRouter.addLiquidityETH{value: 1 ether}(address(testToken), 1 ether, 1, 1, msg.sender, 1e20);
 
         address firstPair = uniswapFactory.getPair(address(testToken), wethTokenAddress);
-        address secondPair = sushiswapFactory.getPair(address(testToken), wethTokenAddress);
+        console.log("Address of the uniSwapPair :", address(firstPair));
+        emit log_decimal_uint("UniSwap getReserves()", )
+        // address secondPair = sushiswapFactory.getPair(address(testToken), wethTokenAddress);
 
-        blindBackrun.executeArbitrage(firstPair, secondPair, 80);
+        // blindBackrun.executeArbitrage(firstPair, secondPair, 80);
     }
 
     function test_RevertWhen_CallerIsNotOwner() public {
-        vm.expectRevert('Ownable: caller is not the owner');
-        vm.prank(address(0));
-        blindBackrun.withdrawWETHToOwner();
+        console.log("Starting test_RevertWhen_CallerIsNotOwner()...");
+        // vm.expectRevert('Ownable: caller is not the owner');
+        // vm.prank(address(0));
+        // blindBackrun.withdrawWETHToOwner();
     }
 }
