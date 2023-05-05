@@ -4,7 +4,7 @@ interface IUniswapFactory {
     function getPair(address tokenA, address tokenB) external view returns (address pair);
 }
 
-interface IUniswapV2Pair {
+interface IV2Pair {
   
   function MINIMUM_LIQUIDITY() external pure returns (uint);
   function factory() external view returns (address);
@@ -16,7 +16,7 @@ interface IUniswapV2Pair {
   function kLast() external view returns (uint);
 
 }
-interface 
+
 interface IUniswapV2Router {
     function swapExactETHForTokens(
         uint amountOutMin, 

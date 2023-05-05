@@ -1,5 +1,5 @@
 pragma solidity ^0.8.0;
-
+import "forge-std/Test.sol";
 import "openzeppelin/token/ERC20/IERC20.sol";
 import "openzeppelin/access/Ownable.sol";
 import "openzeppelin/utils/math/SafeMath.sol";
@@ -50,6 +50,9 @@ contract BlindBackrun is Ownable {
         PairReserves memory secondPairData = getPairData(secondPair);
 
         uint256 amountIn = getAmountIn(firstPairData, secondPairData);
+        console.log("price of firstPair=", firstPairData.price);
+        console.log("price of secondPair=", secondPairData.price);
+        console.log("Arbitrage amountIn=", amountIn);
         IERC20(WETH_ADDRESS).transfer(firstPairAddress, amountIn);
         
         uint256 firstPairAmountOut;
