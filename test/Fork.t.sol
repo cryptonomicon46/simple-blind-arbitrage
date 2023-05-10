@@ -20,6 +20,7 @@ contract ForkTest is Test {
 
         string  MAINNET_RPC_URL = vm.envString("RPC_MAINNET");
         string  OPTIMISM_RPC_URL = vm.envString("RPC_OPTIMISM");
+        string  GOERLI_RPC_URL  = vm.envString("RPC_GOERLI");
 
 
     function setUp() public {
